@@ -1,0 +1,10 @@
+[package]
+name = "vimv"
+version = "0.1.0"
+authors = ["Darren Mulholland <dmulholl@tcd.ie>"]
+edition = "2018"
+description = "A command line utility for batch renaming files."
+license = "MIT"
+
+[dependencies]
+arguably = "0.8"
