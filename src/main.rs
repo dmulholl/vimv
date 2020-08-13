@@ -37,8 +37,7 @@ fn main() {
     }
 
     if parser.args.len() == 0 {
-        eprintln!("Error: missing filename argument");
-        exit(1);
+        exit(0);
     }
 
     let input_string = parser.args.join("\n");
