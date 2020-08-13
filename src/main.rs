@@ -22,7 +22,7 @@ Arguments:
 Flags:
   -f, --force           Force overwrite existing files.
   -h, --help            Print this help text.
-  -v, --version         Print the application's version number.
+  -v, --version         Print the version number.
 ";
 
 
