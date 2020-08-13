@@ -9,12 +9,19 @@ use std::process::exit;
 const HELP: &str = "
 Usage: vimv [FLAGS] [ARGUMENTS]
 
-  This utility lets you batch rename files using a text editor.
+  This utility lets you batch rename files using a text editor. Files to be
+  renamed should be supplied as a list of command-line arguments, e.g.
 
-  The list of files to rename will be opened in the editor specified by the
-  $EDITOR environment variable, one file per line. Edit the list, save, and
-  exit. The files will be renamed to the edited filenames. Directories will
-  be created as required.
+    $ vimv *.mp3
+
+  The list of files will be opened in the editor specified by the $EDITOR
+  environment variable, one filename per line. Edit the list, save, and exit.
+  The files will be renamed to the edited filenames. Directories along the
+  path will be created as required.
+
+  Use the --force flag to overwrite existing files. Existing directories will
+  not be overwritten. (If you attempt to overwrite a directory the program
+  will exit with an error message and a non-zero status code.)
 
 Arguments:
   [files]               List of files to rename.
@@ -71,11 +78,20 @@ fn main() {
         if input_filename == output_filename {
             continue;
         }
+
         let output_path = Path::new(output_filename);
-        if output_path.exists() && !parser.found("force").unwrap() {
-            eprintln!("Error: the output file '{}' already exists", output_filename);
+        if output_path.is_dir() {
+            eprintln!("Error: cannot overwrite directory '{}'", output_filename);
             exit(1);
         }
+        if output_path.is_file() && !parser.found("force").unwrap() {
+            eprintln!(
+                "Error: the output file '{}' already exists, use --force to overwrite",
+                output_filename
+            );
+            exit(1);
+        }
+
         if let Some(parent_path) = output_path.parent() {
             if !parent_path.is_dir() {
                 if let Err(err) = std::fs::create_dir_all(parent_path) {
@@ -84,7 +100,8 @@ fn main() {
                 }
             }
         }
-        if let Err(err) = std::fs::rename(input_filename, output_filenames[i]) {
+
+        if let Err(err) = std::fs::rename(input_filename, output_filename) {
             eprintln!("Error: {}", err);
             exit(1);
         }
