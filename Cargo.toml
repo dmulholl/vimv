@@ -1,10 +1,13 @@
 [package]
 name = "vimv"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Darren Mulholland <dmulholl@tcd.ie>"]
 edition = "2018"
-description = "A command line utility for batch renaming files."
+description = "A command line utility for batch renaming files using a text editor."
 license = "MIT"
+homepage = "https://www.dmulholl.com/dev/vimv.html"
+repository = "https://github.com/dmulholl/vimv"
 
 [dependencies]
 arguably = "0.8"
+edit = "0.1"
