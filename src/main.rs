@@ -59,13 +59,11 @@ fn main() {
     let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
     let output_filenames: Vec<&str> = output_string.trim().lines().map(|s| s.trim()).collect();
 
-    // Sanity check: make sure we have the same number of input and output files.
     if output_filenames.len() != input_filenames.len() {
         eprintln!("Error: number of input filenames does not match number of output filenames");
         exit(1);
     }
 
-    // Sanity check: make sure all the input files exist.
     for input_filename in &input_filenames {
         if !Path::new(input_filename).exists() {
             eprintln!("Error: the input file '{}' does not exist", input_filename);
@@ -73,37 +71,41 @@ fn main() {
         }
     }
 
-    for (i, input_filename) in input_filenames.iter().enumerate() {
-        let output_filename = &output_filenames[i];
-        if input_filename == output_filename {
-            continue;
-        }
+    for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
+        move_file(input_filename, output_filename, parser.found("force").unwrap());
+    }
+}
 
-        let output_path = Path::new(output_filename);
-        if output_path.is_dir() {
-            eprintln!("Error: cannot overwrite directory '{}'", output_filename);
-            exit(1);
-        }
-        if output_path.is_file() && !parser.found("force").unwrap() {
-            eprintln!(
-                "Error: the output file '{}' already exists, use --force to overwrite",
-                output_filename
+
+fn move_file(input_filename: &str, output_filename: &str, overwrite: bool) {
+    if input_filename == output_filename {
+        return;
+    }
+
+    let output_path = Path::new(output_filename);
+    if output_path.is_dir() {
+        eprintln!("Error: cannot overwrite directory '{}'", output_filename);
+        exit(1);
+    }
+    if output_path.is_file() && !overwrite {
+        eprintln!(
+            "Error: the output file '{}' already exists, use --force to overwrite",
+            output_filename
             );
-            exit(1);
-        }
+        exit(1);
+    }
 
-        if let Some(parent_path) = output_path.parent() {
-            if !parent_path.is_dir() {
-                if let Err(err) = std::fs::create_dir_all(parent_path) {
-                    eprintln!("Error: {}", err);
-                    exit(1);
-                }
+    if let Some(parent_path) = output_path.parent() {
+        if !parent_path.is_dir() {
+            if let Err(err) = std::fs::create_dir_all(parent_path) {
+                eprintln!("Error: {}", err);
+                exit(1);
             }
         }
+    }
 
-        if let Err(err) = std::fs::rename(input_filename, output_filename) {
-            eprintln!("Error: {}", err);
-            exit(1);
-        }
+    if let Err(err) = std::fs::rename(input_filename, output_filename) {
+        eprintln!("Error: {}", err);
+        exit(1);
     }
 }
