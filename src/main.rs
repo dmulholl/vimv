@@ -47,6 +47,14 @@ fn main() {
         exit(0);
     }
 
+    let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
+    for input_filename in &input_filenames {
+        if !Path::new(input_filename).exists() {
+            eprintln!("Error: the input file '{}' does not exist", input_filename);
+            exit(1);
+        }
+    }
+
     let input_string = parser.args.join("\n");
     let output_string = match edit::edit(input_string) {
         Ok(edited) => edited,
@@ -56,19 +64,10 @@ fn main() {
         }
     };
 
-    let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
     let output_filenames: Vec<&str> = output_string.trim().lines().map(|s| s.trim()).collect();
-
     if output_filenames.len() != input_filenames.len() {
         eprintln!("Error: number of input filenames does not match number of output filenames");
         exit(1);
-    }
-
-    for input_filename in &input_filenames {
-        if !Path::new(input_filename).exists() {
-            eprintln!("Error: the input file '{}' does not exist", input_filename);
-            exit(1);
-        }
     }
 
     for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
@@ -91,7 +90,7 @@ fn move_file(input_filename: &str, output_filename: &str, overwrite: bool) {
         eprintln!(
             "Error: the output file '{}' already exists, use --force to overwrite",
             output_filename
-            );
+        );
         exit(1);
     }
 
