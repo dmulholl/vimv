@@ -52,8 +52,8 @@ fn main() {
         exit(0);
     }
 
-    if parser.found("editor").unwrap() {
-        env::set_var("VISUAL", parser.value("editor").unwrap().unwrap());
+    if let Some(editor) = parser.value("editor") {
+        env::set_var("VISUAL", editor);
     }
 
     let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
@@ -80,7 +80,7 @@ fn main() {
     }
 
     for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
-        move_file(input_filename, output_filename, parser.found("force").unwrap());
+        move_file(input_filename, output_filename, parser.found("force"));
     }
 }
 

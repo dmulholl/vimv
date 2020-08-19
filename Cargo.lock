@@ -2,9 +2,9 @@
 # It is not intended for manual editing.
 [[package]]
 name = "arguably"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f95074198db147318d5796d7dd0e99492866ebb4d373dde127dc19c98d7542e"
+checksum = "5bf10f5324a312bcc62ab58fcd12ec87a5db616dd9767de9d9cb85d61602e6d7"
 
 [[package]]
 name = "cfg-if"
@@ -117,7 +117,7 @@ dependencies = [
 
 [[package]]
 name = "vimv"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "arguably",
  "edit",
