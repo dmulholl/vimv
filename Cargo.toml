@@ -10,4 +10,4 @@ repository = "https://github.com/dmulholl/vimv"
 
 [dependencies]
 arguably = "0.8"
-edit = "0.1"
+edit = "0.1.2"
