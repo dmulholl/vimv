@@ -4,10 +4,11 @@ extern crate edit;
 use arguably::ArgParser;
 use std::path::Path;
 use std::process::exit;
+use std::env;
 
 
 const HELP: &str = "
-Usage: vimv [FLAGS] [ARGUMENTS]
+Usage: vimv [FLAGS] [OPTIONS] [ARGUMENTS]
 
   This utility lets you batch rename files using a text editor. Files to be
   renamed should be supplied as a list of command-line arguments, e.g.
@@ -24,12 +25,15 @@ Usage: vimv [FLAGS] [ARGUMENTS]
   will exit with an error message and a non-zero status code.)
 
 Arguments:
-  [files]               List of files to rename.
+  [files]                   List of files to rename.
+
+Options:
+  -e, --editor <name>       Specify the editor to use.
 
 Flags:
-  -f, --force           Force overwrite existing files.
-  -h, --help            Print this help text.
-  -v, --version         Print the version number.
+  -f, --force               Force overwrite existing files.
+  -h, --help                Print this help text.
+  -v, --version             Print the version number.
 ";
 
 
@@ -37,7 +41,8 @@ fn main() {
     let mut parser = ArgParser::new()
         .helptext(HELP)
         .version(env!("CARGO_PKG_VERSION"))
-        .flag("force f");
+        .flag("force f")
+        .option("editor e");
 
     if let Err(err) = parser.parse() {
         err.exit();
@@ -45,6 +50,10 @@ fn main() {
 
     if parser.args.len() == 0 {
         exit(0);
+    }
+
+    if parser.found("editor").unwrap() {
+        env::set_var("VISUAL", parser.value("editor").unwrap().unwrap());
     }
 
     let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
