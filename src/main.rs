@@ -24,6 +24,15 @@ Usage: vimv [FLAGS] [OPTIONS] [ARGUMENTS]
   not be overwritten. (If you attempt to overwrite a directory the program
   will exit with an error message and a non-zero status code.)
 
+  Note - if you want to use a graphical editor like VS Code instead of a
+  terminal editor like Vim then (depending on your operating system) you may
+  need to add a 'wait' flag to the $EDITOR variable to force your editor to
+  block, e.g.
+
+    EDITOR=\"code -w\"        # for VS Code
+    EDITOR=\"subl -w\"        # for Sublime Text
+    EDITOR=\"atom -w\"        # for Atom
+
 Arguments:
   [files]                   List of files to rename.
 
