@@ -88,31 +88,33 @@ fn main() {
         exit(1);
     }
 
+    for output_filename in &output_filenames {
+        let output_path = Path::new(output_filename);
+        if output_path.is_dir() {
+            eprintln!("Error: cannot overwrite directory '{}'", output_filename);
+            exit(1);
+        }
+        if output_path.is_file() && !parser.found("force") {
+            eprintln!(
+                "Error: the output file '{}' already exists, use --force to overwrite",
+                output_filename
+            );
+            exit(1);
+        }
+    }
+
     for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
-        move_file(input_filename, output_filename, parser.found("force"));
+        move_file(input_filename, output_filename);
     }
 }
 
 
-fn move_file(input_filename: &str, output_filename: &str, overwrite: bool) {
+fn move_file(input_filename: &str, output_filename: &str) {
     if input_filename == output_filename {
         return;
     }
 
-    let output_path = Path::new(output_filename);
-    if output_path.is_dir() {
-        eprintln!("Error: cannot overwrite directory '{}'", output_filename);
-        exit(1);
-    }
-    if output_path.is_file() && !overwrite {
-        eprintln!(
-            "Error: the output file '{}' already exists, use --force to overwrite",
-            output_filename
-        );
-        exit(1);
-    }
-
-    if let Some(parent_path) = output_path.parent() {
+    if let Some(parent_path) = Path::new(output_filename).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
                 eprintln!("Error: {}", err);
