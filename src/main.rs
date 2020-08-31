@@ -88,7 +88,10 @@ fn main() {
         exit(1);
     }
 
-    for output_filename in &output_filenames {
+    for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
+        if input_filename == output_filename {
+            continue;
+        }
         let output_path = Path::new(output_filename);
         if output_path.is_dir() {
             eprintln!("Error: cannot overwrite directory '{}'", output_filename);
