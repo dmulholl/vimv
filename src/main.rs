@@ -21,12 +21,12 @@ Usage: vimv [FLAGS] [OPTIONS] [ARGUMENTS]
   The files will be renamed to the edited filenames. Directories along the
   renamed path will be created as required.
 
-  Use the --force/-f flag to overwrite existing files. Existing directories
-  will never be overwritten. (If you attempt to overwrite a directory the
-  program will exit with an error message and a non-zero status code.)
+  Use the --force flag to overwrite existing files. Existing directories will
+  never be overwritten. (If you attempt to overwrite a directory the program
+  will exit with an error message and a non-zero status code.)
 
-  You can delete files by 'renaming' them to a blank line, but only if the
-  --delete/-d flag has been specified. Deleted files are moved to the system's
+  You can delete a file by 'renaming' it to a blank line, but only if the
+  --delete flag has been specified. Deleted files are moved to the system's
   trash/recycle bin.
 
 Arguments:
