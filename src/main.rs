@@ -49,7 +49,7 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .flag("force f")
         .flag("delete d")
-        .option("editor e");
+        .option("editor e", "");
 
     // Parse the command line arguments.
     if let Err(err) = parser.parse() {
@@ -60,8 +60,8 @@ fn main() {
     }
 
     // Use the --editor option if present to set $VISUAL.
-    if let Some(editor) = parser.value("editor") {
-        env::set_var("VISUAL", editor);
+    if parser.found("editor") {
+        env::set_var("VISUAL", parser.value("editor"));
     }
 
     // Assemble the input filenames and verify they all really exist.
