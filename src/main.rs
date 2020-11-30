@@ -9,7 +9,7 @@ use std::env;
 
 
 const HELP: &str = "
-Usage: vimv [FLAGS] [OPTIONS] [ARGUMENTS]
+Usage: vimv [files]
 
   This utility lets you batch rename files using a text editor. Files to be
   renamed should be supplied as a list of command-line arguments, e.g.
