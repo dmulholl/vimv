@@ -1,11 +1,8 @@
-extern crate arguably;
-extern crate edit;
-extern crate trash;
-
 use arguably::ArgParser;
 use std::path::Path;
 use std::process::exit;
 use std::env;
+use std::collections::HashSet;
 
 
 const HELP: &str = "
@@ -21,9 +18,13 @@ Usage: vimv [files]
   The files will be renamed to the edited filenames. Directories along the
   renamed path will be created as required.
 
-  Use the --force flag to overwrite existing files. Existing directories will
-  never be overwritten. (If you attempt to overwrite a directory the program
-  will exit with an error message and a non-zero status code.)
+  Vimv supports cycle-renaming. You can safely rename A to B, B to C, and C
+  to A in a single operation.
+
+  Use the --force flag to overwrite existing files that aren't part of a
+  renaming cycle. (Existing directories are never overwritten. If you attempt
+  to overwrite a directory the program will exit with an error message and a
+  non-zero status code.)
 
   You can delete a file by 'renaming' it to a blank line, but only if the
   --delete flag has been specified. Deleted files are moved to the system's
@@ -37,7 +38,7 @@ Options:
 
 Flags:
   -d, --delete              Enable file deletion.
-  -f, --force               Force overwrite existing files.
+  -f, --force               Overwrite existing files.
   -h, --help                Print this help text.
   -v, --version             Print the version number.
 ";
@@ -64,18 +65,18 @@ fn main() {
         env::set_var("VISUAL", parser.value("editor"));
     }
 
-    // Assemble the input filenames and verify they all really exist.
-    let input_filenames: Vec<&str> = parser.args.iter().map(|s| s.trim()).collect();
-    for input_filename in &input_filenames {
-        if !Path::new(input_filename).exists() {
-            eprintln!("Error: the input file '{}' does not exist", input_filename);
+    // Assemble the list of input filenames and verify that they all exist.
+    let input_files: Vec<String> = parser.args.iter().map(|s| s.trim().to_string()).collect();
+    for input_file in &input_files {
+        if !Path::new(input_file).exists() {
+            eprintln!("Error: the input file '{}' does not exist.", input_file);
             exit(1);
         }
     }
 
     // Fetch the string of output filenames from the editor.
-    let input_string = parser.args.join("\n");
-    let output_string = match edit::edit(input_string) {
+    let editor_input = parser.args.join("\n");
+    let editor_output = match edit::edit(editor_input) {
         Ok(edited) => edited,
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -84,68 +85,113 @@ fn main() {
     };
 
     // Sanity check - verify that we have equal numbers of input and output filenames.
-    let output_filenames: Vec<&str> = output_string.lines().map(|s| s.trim()).collect();
-    if output_filenames.len() != input_filenames.len() {
+    let output_files: Vec<String> = editor_output.lines().map(|s| s.trim().to_string()).collect();
+    if output_files.len() != input_files.len() {
         eprintln!(
-            "Error: number of input filenames ({}) does not match number of output filenames ({})",
-            input_filenames.len(),
-            output_filenames.len()
+            "Error: the number of input filenames ({}) does not match the number of output filenames ({}).",
+            input_files.len(),
+            output_files.len()
         );
         exit(1);
     }
 
-    // Permissions check - verify that we have permission to perform all operations.
-    // - We never overwrite directories.
-    // - We only overwrite files if the --force flag has been set.
-    // - We only delete files if the --delete flag has been set.
-    for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
-        let output_path = Path::new(output_filename);
-        if input_filename == output_filename {
-            continue;
-        } else if output_path.is_dir() {
-            eprintln!("Error: cannot overwrite directory '{}'", output_filename);
+    // Sanity check - verify that the (non-empty) output filenames are unique.
+    let mut set = HashSet::new();
+    for output_file in output_files.iter().filter(|s| !s.is_empty()) {
+        if set.contains(output_file) {
+            eprintln!("Error: the filename '{}' appears in the output list multiple times.", output_file);
             exit(1);
-        } else if output_filename.is_empty() {
-            if !parser.found("delete") {
-                eprintln!("Error: use the --delete flag to enable file deletion");
-                exit(1);
-            }
-        } else if output_path.is_file() {
-            if !parser.found("force") {
-                eprintln!(
-                    "Error: the output file '{}' already exists, use --force to overwrite",
-                    output_filename
-                );
-                exit(1);
-            }
+        } else {
+            set.insert(output_file);
         }
     }
 
-    // Operations loop. We haven't made any changes to the file system up to this point.
-    for (input_filename, output_filename) in input_filenames.iter().zip(output_filenames.iter()) {
-        if input_filename == output_filename {
+    // List of files to delete.
+    let mut delete_list: Vec<&str> = Vec::new();
+
+    // List of rename operations as (src, dst) tuples.
+    let mut rename_list: Vec<(String, String)> = Vec::new();
+
+    // Populate the todo lists.
+    for (input_file, output_file) in input_files.iter().zip(output_files.iter()) {
+        if input_file == output_file {
             continue;
-        } else if output_filename.is_empty() {
-            delete_file(input_filename);
+        } else if Path::new(output_file).is_dir() {
+            eprintln!("Error: cannot overwrite the existing directory '{}'.", output_file);
+            exit(1);
+        } else if output_file.is_empty() {
+            if parser.found("delete") {
+                delete_list.push(input_file);
+            } else {
+                eprintln!("Error: use the --delete flag to enable file deletion.");
+                exit(1);
+            }
+        } else if Path::new(output_file).is_file() {
+            if input_files.contains(output_file) {
+                rename_list.push((input_file.to_string(), output_file.to_string()));
+            } else if parser.found("force") {
+                rename_list.push((input_file.to_string(), output_file.to_string()));
+            } else {
+                eprintln!(
+                    "Error: the output file '{}' already exists, use --force to overwrite it.",
+                    output_file
+                );
+                exit(1);
+            }
         } else {
-            move_file(input_filename, output_filename);
+            rename_list.push((input_file.to_string(), output_file.to_string()));
         }
+    }
+
+    // Check for cycles. If we find src being renamed to dst where dst is one of the input
+    // filenames, we rename src to tmp instead and later rename tmp to dst.
+    for i in 0..rename_list.len() {
+        if input_files.contains(&rename_list[i].1) {
+            let temp_file = get_temp_filename(&rename_list[i].0);
+            rename_list.push((temp_file.clone(), rename_list[i].1.clone()));
+            rename_list[i].1 = temp_file
+        }
+    }
+
+    // Deletion loop. We haven't make any changes to the file system up to this point.
+    for input_file in delete_list {
+        delete_file(input_file);
+    }
+
+    // Rename loop.
+    for (input_file, output_file) in rename_list {
+        move_file(&input_file, &output_file);
     }
 }
 
 
+// Generate a unique temporary filename.
+fn get_temp_filename(base: &str) -> String {
+    let mut count = 0;
+    while count < 100 {
+        let candidate = format!("{}.vimv_temp_{:02}", base, count);
+        if !Path::new(&candidate).exists() {
+            return candidate;
+        }
+        count += 1;
+    }
+    eprintln!("Error: cannot generate a temporary filename of the form '{}.vimv_temp_XX'.", base);
+    exit(1);
+}
+
+
 // Move the specified file to the system trash/recycle bin.
-fn delete_file(input_filename: &str) {
-    if let Err(err) = trash::delete(input_filename) {
+fn delete_file(input_file: &str) {
+    if let Err(err) = trash::delete(input_file) {
         eprintln!("Error: {}", err);
         exit(1);
     }
 }
 
 
-// Rename `input_filename` to `output_filename`.
-fn move_file(input_filename: &str, output_filename: &str) {
-    if let Some(parent_path) = Path::new(output_filename).parent() {
+// Rename `input_file` to `output_file`.
+fn move_file(input_file: &str, output_file: &str) {
+    if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
                 eprintln!("Error: {}", err);
@@ -153,7 +199,7 @@ fn move_file(input_filename: &str, output_filename: &str) {
             }
         }
     }
-    if let Err(err) = std::fs::rename(input_filename, output_filename) {
+    if let Err(err) = std::fs::rename(input_file, output_file) {
         eprintln!("Error: {}", err);
         exit(1);
     }
