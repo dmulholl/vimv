@@ -10,6 +10,6 @@ repository = "https://github.com/dmulholl/vimv"
 readme = "readme.md"
 
 [dependencies]
-arguably = "2.0.0-alpha"
+arguably = "2.0.0"
 edit = "0.1.2"
 trash = "1.2"

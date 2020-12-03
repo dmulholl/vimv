@@ -2,9 +2,9 @@
 # It is not intended for manual editing.
 [[package]]
 name = "arguably"
-version = "2.0.0-alpha.3"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c13cfe1a457e08e1725f34bd150948e37d0bd019dd2547485a0dc37c7d82b16f"
+checksum = "be599bc701e6bc4b34e62ae0b69341870995814cc40bfcbb90d04b20ed887fc3"
 
 [[package]]
 name = "cfg-if"
