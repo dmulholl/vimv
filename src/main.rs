@@ -169,7 +169,7 @@ fn main() {
         }
     }
 
-    // Deletion loop. We haven't make any changes to the file system up to this point.
+    // Deletion loop. We haven't made any changes to the file system up to this point.
     for input_file in delete_list {
         delete_file(input_file);
     }
