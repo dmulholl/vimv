@@ -198,7 +198,8 @@ fn get_temp_filename(base: &str) -> String {
 // Move the specified file to the system trash/recycle bin.
 fn delete_file(input_file: &str) {
     if let Err(err) = trash::delete(input_file) {
-        eprintln!("Error: {}", err);
+        eprintln!("Error: an error occured while attempting to delete the file '{}'.", input_file);
+        eprintln!("The OS reports: {}", err);
         exit(1);
     }
 }
@@ -209,13 +210,15 @@ fn move_file(input_file: &str, output_file: &str) {
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
-                eprintln!("Error: {}", err);
+                eprintln!("Error: cannot create the required directory '{}'.", parent_path.display());
+                eprintln!("The OS reports: {}", err);
                 exit(1);
             }
         }
     }
     if let Err(err) = std::fs::rename(input_file, output_file) {
-        eprintln!("Error: {}", err);
+        eprintln!("Error: cannot rename the file '{}' to '{}'.", input_file, output_file);
+        eprintln!("The OS reports: {}", err);
         exit(1);
     }
 }
