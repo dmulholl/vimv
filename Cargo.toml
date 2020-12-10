@@ -1,6 +1,6 @@
 [package]
 name = "vimv"
-version = "1.2.0"
+version = "1.2.1"
 authors = ["Darren Mulholland <dmulholl@tcd.ie>"]
 edition = "2018"
 description = "A command line utility for batch renaming files using a text editor."
@@ -13,3 +13,4 @@ readme = "readme.md"
 arguably = "2.0.0"
 edit = "0.1.2"
 trash = "1.2"
+rand = "0.7.3"

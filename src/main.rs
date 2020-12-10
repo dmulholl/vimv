@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::exit;
 use std::env;
 use std::collections::HashSet;
+use rand::Rng;
 
 
 const HELP: &str = "
@@ -167,15 +168,14 @@ fn main() {
 
 // Generate a unique temporary filename.
 fn get_temp_filename(base: &str) -> String {
-    let mut count = 0;
-    while count < 100 {
-        let candidate = format!("{}.vimv_temp_{:02}", base, count);
+    let mut rng = rand::thread_rng();
+    for _ in 0..10 {
+        let candidate = format!("{}.vimv_temp_{:04}", base, rng.gen_range(0, 10_000));
         if !Path::new(&candidate).exists() {
             return candidate;
         }
-        count += 1;
     }
-    eprintln!("Error: cannot generate a temporary filename of the form '{}.vimv_temp_XX'.", base);
+    eprintln!("Error: cannot generate a temporary filename of the form '{}.vimv_temp_XXXX'.", base);
     exit(1);
 }
 
