@@ -97,14 +97,29 @@ fn main() {
     }
 
     // Sanity check - verify that the (non-empty) output filenames are unique.
-    let mut set = HashSet::new();
+    let mut cs_set = HashSet::new();
     for output_file in output_files.iter().filter(|s| !s.is_empty()) {
-        if set.contains(output_file) {
+        if cs_set.contains(output_file) {
             eprintln!("Error: the filename '{}' appears in the output list multiple times.", output_file);
             exit(1);
-        } else {
-            set.insert(output_file);
         }
+        cs_set.insert(output_file);
+    }
+
+    // Sanity check - verify that the (non-empty) output filenames are case-insensitively unique.
+    let mut ci_set = HashSet::new();
+    for output_file in output_files.iter().filter(|s| !s.is_empty()).map(|s| s.to_lowercase()) {
+        if ci_set.contains(&output_file) {
+            eprintln!(
+                "Error: the filename '{}' appears multiple times in the output list (case \
+                insensitively). This may be intentional but Vimv always treats this situation \
+                as an error to avoid accidentally overwriting files on case-insensitive \
+                file systems.",
+                output_file
+            );
+            exit(1);
+        }
+        ci_set.insert(output_file);
     }
 
     // List of files to delete.
