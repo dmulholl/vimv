@@ -4,6 +4,7 @@ use std::process::exit;
 use std::env;
 use std::collections::HashSet;
 use rand::Rng;
+use std::process::Command;
 
 
 const HELP: &str = "
@@ -17,7 +18,7 @@ Usage: vimv [files]
   The list of files will be opened in the editor specified by the $EDITOR
   environment variable, one filename per line. Edit the list, save, and exit.
   The files will be renamed to the edited filenames. Directories along the
-  renamed path will be created as required.
+  new paths will be created as required.
 
   Vimv supports cycle-renaming. You can safely rename A to B, B to C, and C
   to A in a single operation.
@@ -29,7 +30,8 @@ Usage: vimv [files]
 
   You can delete a file by 'renaming' it to a blank line, but only if the
   --delete flag has been specified. Deleted files are moved to the system's
-  trash/recycle bin.
+  trash/recycle bin, unless the --git flag has been specified in which case
+  'git rm' is used to delete the file.
 
 Arguments:
   [files]                   List of files to rename.
@@ -40,6 +42,7 @@ Options:
 Flags:
   -d, --delete              Enable file deletion.
   -f, --force               Overwrite existing files.
+  -g, --git                 Use 'git mv' to rename, 'git rm' to delete.
   -h, --help                Print this help text.
   -v, --version             Print the version number.
 ";
@@ -51,6 +54,7 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .flag("force f")
         .flag("delete d")
+        .flag("git g")
         .option("editor e", "");
 
     // Parse the command line arguments.
@@ -171,12 +175,12 @@ fn main() {
 
     // Deletion loop. We haven't made any changes to the file system up to this point.
     for input_file in delete_list {
-        delete_file(input_file);
+        delete_file(input_file, parser.found("git"));
     }
 
     // Rename loop.
     for (input_file, output_file) in rename_list {
-        move_file(&input_file, &output_file);
+        move_file(&input_file, &output_file, parser.found("git"));
     }
 }
 
@@ -195,10 +199,25 @@ fn get_temp_filename(base: &str) -> String {
 }
 
 
-// Move the specified file to the system trash/recycle bin.
-fn delete_file(input_file: &str) {
-    if let Err(err) = trash::delete(input_file) {
-        eprintln!("Error: an error occured while attempting to delete the file '{}'.", input_file);
+// Delete the specified file using 'git rm' or move it to the system's trash/recycle bin.
+fn delete_file(input_file: &str, use_git: bool) {
+    if use_git {
+        match Command::new("git").arg("rm").arg("-r").arg(input_file).output() {
+            Err(err) => {
+                eprintln!("Error: cannot 'git rm' the file '{}'.", input_file);
+                eprintln!("The OS reports: {}", err);
+                exit(1);
+            },
+            Ok(output) => {
+                if !output.status.success() {
+                    eprintln!("Error: cannot 'git rm' the file '{}'.", input_file);
+                    eprintln!("Git reports: {}", String::from_utf8_lossy(&output.stderr).trim());
+                    exit(1);
+                }
+            }
+        };
+    } else if let Err(err) = trash::delete(input_file) {
+        eprintln!("Error: cannot delete the file '{}'.", input_file);
         eprintln!("The OS reports: {}", err);
         exit(1);
     }
@@ -206,7 +225,7 @@ fn delete_file(input_file: &str) {
 
 
 // Rename `input_file` to `output_file`.
-fn move_file(input_file: &str, output_file: &str) {
+fn move_file(input_file: &str, output_file: &str, use_git: bool) {
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
@@ -216,7 +235,22 @@ fn move_file(input_file: &str, output_file: &str) {
             }
         }
     }
-    if let Err(err) = std::fs::rename(input_file, output_file) {
+    if use_git {
+        match Command::new("git").arg("mv").arg("-f").arg(input_file).arg(output_file).output() {
+            Err(err) => {
+                eprintln!("Error: cannot 'git mv' the file '{}' to '{}'.", input_file, output_file);
+                eprintln!("The OS reports: {}", err);
+                exit(1);
+            },
+            Ok(output) => {
+                if !output.status.success() {
+                    eprintln!("Error: cannot 'git mv' the file '{}' to '{}'.", input_file, output_file);
+                    eprintln!("Git reports: {}", String::from_utf8_lossy(&output.stderr).trim());
+                    exit(1);
+                }
+            }
+        };
+    } else if let Err(err) = std::fs::rename(input_file, output_file) {
         eprintln!("Error: cannot rename the file '{}' to '{}'.", input_file, output_file);
         eprintln!("The OS reports: {}", err);
         exit(1);
