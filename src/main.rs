@@ -81,6 +81,16 @@ fn main() {
         }
     }
 
+    // Sanity check - verify that the input filenames are unique.
+    let mut input_set = HashSet::new();
+    for input_file in &input_files {
+        if input_set.contains(input_file) {
+            eprintln!("Error: the filename '{}' appears in the input list multiple times.", input_file);
+            exit(1);
+        }
+        input_set.insert(input_file);
+    }
+
     // Fetch the string of output filenames from the editor.
     let editor_input = parser.args.join("\n");
     let editor_output = match edit::edit(editor_input) {
