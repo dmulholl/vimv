@@ -30,8 +30,8 @@ Usage: vimv [files]
 
   You can delete a file by 'renaming' it to a blank line, but only if the
   --delete flag has been specified. Deleted files are moved to the system's
-  trash/recycle bin, unless the --git flag has been specified in which case
-  'git rm' is used to delete the file.
+  trash/recycle bin, unless the --git flag has been specified and the file is
+  being tracked by git in which case 'git rm' is used to delete the file.
 
 Arguments:
   [files]                   List of files to rename.
@@ -43,9 +43,9 @@ Flags:
   -d, --delete              Enable file deletion.
   -f, --force               Overwrite existing files.
   -g, --git                 Use 'git mv' to rename, 'git rm' to delete.
-  -h, --help                Print this help text.
+  -h, --help                Print this help text and exit.
   -q, --quiet               Only report errors.
-  -v, --version             Print the version number.
+  -v, --version             Print the version number and exit.
 ";
 
 
@@ -223,7 +223,7 @@ fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
     if !quiet {
         println!("Deleting: {}", input_file);
     }
-    if use_git {
+    if use_git && is_git_tracked(input_file) {
         match Command::new("git").arg("rm").arg("-r").arg(input_file).output() {
             Err(err) => {
                 eprintln!("Error: cannot 'git rm' the file '{}'.", input_file);
@@ -260,7 +260,7 @@ fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
             }
         }
     }
-    if use_git {
+    if use_git && is_git_tracked(input_file) {
         match Command::new("git").arg("mv").arg("-f").arg(input_file).arg(output_file).output() {
             Err(err) => {
                 eprintln!("Error: cannot 'git mv' the file '{}' to '{}'.", input_file, output_file);
@@ -279,5 +279,20 @@ fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
         eprintln!("Error: cannot rename the file '{}' to '{}'.", input_file, output_file);
         eprintln!("The OS reports: {}", err);
         exit(1);
+    }
+}
+
+
+// Returns true if the file is being tracked by git.
+fn is_git_tracked(file: &str) -> bool {
+    match Command::new("git").arg("ls-files").arg("--error-unmatch").arg(file).output() {
+        Err(err) => {
+            eprintln!("Error: cannot check if the file '{}' is being tracked by git.", file);
+            eprintln!("The OS reports: {}", err);
+            exit(1);
+        },
+        Ok(output) => {
+            output.status.success()
+        }
     }
 }
