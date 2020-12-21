@@ -44,6 +44,7 @@ Flags:
   -f, --force               Overwrite existing files.
   -g, --git                 Use 'git mv' to rename, 'git rm' to delete.
   -h, --help                Print this help text.
+  -q, --quiet               Only report errors.
   -v, --version             Print the version number.
 ";
 
@@ -55,6 +56,7 @@ fn main() {
         .flag("force f")
         .flag("delete d")
         .flag("git g")
+        .flag("quiet q")
         .option("editor e", "");
 
     // Parse the command line arguments.
@@ -175,12 +177,12 @@ fn main() {
 
     // Deletion loop. We haven't made any changes to the file system up to this point.
     for input_file in delete_list {
-        delete_file(input_file, parser.found("git"));
+        delete_file(input_file, parser.found("git"), parser.found("quiet"));
     }
 
     // Rename loop.
     for (input_file, output_file) in rename_list {
-        move_file(&input_file, &output_file, parser.found("git"));
+        move_file(&input_file, &output_file, parser.found("git"), parser.found("quiet"));
     }
 }
 
@@ -200,7 +202,10 @@ fn get_temp_filename(base: &str) -> String {
 
 
 // Delete the specified file using 'git rm' or move it to the system's trash/recycle bin.
-fn delete_file(input_file: &str, use_git: bool) {
+fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
+    if !quiet {
+        println!("Deleting: {}", input_file);
+    }
     if use_git {
         match Command::new("git").arg("rm").arg("-r").arg(input_file).output() {
             Err(err) => {
@@ -225,7 +230,10 @@ fn delete_file(input_file: &str, use_git: bool) {
 
 
 // Rename `input_file` to `output_file`.
-fn move_file(input_file: &str, output_file: &str, use_git: bool) {
+fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
+    if !quiet {
+        println!("Renaming: {} → {}", input_file, output_file);
+    }
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
