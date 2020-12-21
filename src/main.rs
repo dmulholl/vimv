@@ -144,6 +144,9 @@ fn main() {
     // List of rename operations as (src, dst) tuples.
     let mut rename_list: Vec<(String, String)> = Vec::new();
 
+    // Set of input files to be renamed. Used to check for cycles.
+    let mut rename_set: HashSet<String> = HashSet::new();
+
     // Populate the todo lists.
     for (input_file, output_file) in input_files.iter().zip(output_files.iter()) {
         if input_file == output_file {
@@ -161,8 +164,10 @@ fn main() {
         } else if Path::new(output_file).is_file() {
             if input_files.contains(output_file) {
                 rename_list.push((input_file.to_string(), output_file.to_string()));
+                rename_set.insert(input_file.to_string());
             } else if parser.found("force") {
                 rename_list.push((input_file.to_string(), output_file.to_string()));
+                rename_set.insert(input_file.to_string());
             } else {
                 eprintln!(
                     "Error: the output file '{}' already exists, use --force to overwrite it.",
@@ -172,17 +177,19 @@ fn main() {
             }
         } else {
             rename_list.push((input_file.to_string(), output_file.to_string()));
+            rename_set.insert(input_file.to_string());
         }
     }
 
-    // Check for cycles. If we find src being renamed to dst where dst is one of the input
-    // filenames, we rename src to tmp instead and later rename tmp to dst.
+    // Check for cycles. If we find src being renamed to dst where dst is an input file that hasn't
+    // yet been deleted or renamed, we rename src to tmp instead and later rename tmp to dst.
     for i in 0..rename_list.len() {
-        if input_files.contains(&rename_list[i].1) {
+        if rename_set.contains(&rename_list[i].1) {
             let temp_file = get_temp_filename(&rename_list[i].0);
             rename_list.push((temp_file.clone(), rename_list[i].1.clone()));
             rename_list[i].1 = temp_file
         }
+        rename_set.remove(&rename_list[i].0);
     }
 
     // Deletion loop. We haven't made any changes to the file system up to this point.
