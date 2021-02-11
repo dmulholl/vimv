@@ -30,8 +30,11 @@ Usage: vimv [files]
 
   You can delete a file by 'renaming' it to a blank line, but only if the
   --delete flag has been specified. Deleted files are moved to the system's
-  trash/recycle bin, unless the --git flag has been specified and the file is
-  being tracked by git in which case 'git rm' is used to delete the file.
+  trash/recycle bin.
+
+  If the --git flag is specified then git will be used to rename or delete
+  any files which are being tracked by git. (Note that this bypasses the
+  recycle bin for deleted files.)
 
 Arguments:
   [files]                   List of files to rename.
@@ -42,7 +45,7 @@ Options:
 Flags:
   -d, --delete              Enable file deletion.
   -f, --force               Overwrite existing files.
-  -g, --git                 Use 'git mv' to rename, 'git rm' to delete.
+  -g, --git                 Use git for git-tracked files.
   -h, --help                Print this help text and exit.
   -q, --quiet               Only report errors.
   -v, --version             Print the version number and exit.
