@@ -222,7 +222,7 @@ fn main() {
 fn get_temp_filename(base: &str) -> String {
     let mut rng = rand::thread_rng();
     for _ in 0..10 {
-        let candidate = format!("{}.vimv_temp_{:04}", base, rng.gen_range(0, 10_000));
+        let candidate = format!("{}.vimv_temp_{:04}", base, rng.gen_range(0..10_000));
         if !Path::new(&candidate).exists() {
             return candidate;
         }
