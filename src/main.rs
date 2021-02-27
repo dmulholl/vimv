@@ -5,6 +5,7 @@ use std::env;
 use std::collections::HashSet;
 use rand::Rng;
 use std::process::Command;
+use std::io::Read;
 
 
 const HELP: &str = "
@@ -66,17 +67,27 @@ fn main() {
     if let Err(err) = parser.parse() {
         err.exit();
     }
-    if parser.args.len() == 0 {
-        exit(0);
-    }
 
     // Use the --editor option if present to set $VISUAL.
     if parser.found("editor") {
         env::set_var("VISUAL", parser.value("editor"));
     }
 
-    // Assemble the list of input filenames and verify that they all exist.
-    let input_files: Vec<String> = parser.args.iter().map(|s| s.trim().to_string()).collect();
+    // Assemble the list of input filenames.
+    let input_files: Vec<String> = if parser.args.len() > 0 {
+        parser.args.iter().map(|s| s.trim().to_string()).collect()
+    } else {
+        let mut buffer = String::new();
+        if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
+            eprintln!("Error: cannot read filenames fromm standard input.");
+            eprintln!("The OS reports: {}", err);
+            exit(1);
+        } else {
+            buffer.lines().map(|s| s.trim().to_string()).collect()
+        }
+    };
+
+    // Sanity check - verify that all the input files exist.
     for input_file in &input_files {
         if !Path::new(input_file).exists() {
             eprintln!("Error: the input file '{}' does not exist.", input_file);
@@ -95,7 +106,7 @@ fn main() {
     }
 
     // Fetch the string of output filenames from the editor.
-    let editor_input = parser.args.join("\n");
+    let editor_input = input_files.join("\n");
     let editor_output = match edit::edit(editor_input) {
         Ok(edited) => edited,
         Err(err) => {

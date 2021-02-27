@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "vimv"
-version = "1.4.1"
+version = "1.5.0-alpha.1"
 dependencies = [
  "arguably",
  "edit",
