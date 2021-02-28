@@ -79,7 +79,7 @@ fn main() {
     } else {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
-            eprintln!("Error: cannot read filenames fromm standard input.");
+            eprintln!("Error: cannot read filenames from standard input.");
             eprintln!("The OS reports: {}", err);
             exit(1);
         } else {
