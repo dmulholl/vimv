@@ -264,7 +264,7 @@ fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
 // Rename `input_file` to `output_file`.
 fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
     if !quiet {
-        println!("{} {} {} {}", "Renaming:".bright_black(), input_file, "→".bright_black(), output_file);
+        println!("{} {} {} {}", "Renaming:".bright_black(), input_file, "-->".bright_black(), output_file);
     }
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
