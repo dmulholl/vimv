@@ -236,7 +236,7 @@ fn get_temp_filename(base: &str) -> String {
 // Delete the specified file using 'git rm' or move it to the system's trash/recycle bin.
 fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
     if !quiet {
-        println!("{} {}", "Deleting:".bright_black(), input_file);
+        println!("{} {}", "Deleting".green().bold(), input_file);
     }
     if use_git && is_git_tracked(input_file) {
         match Command::new("git").arg("rm").arg("-r").arg(input_file).output() {
@@ -264,7 +264,7 @@ fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
 // Rename `input_file` to `output_file`.
 fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
     if !quiet {
-        println!("{} {} {} {}", "Renaming:".bright_black(), input_file, "-->".bright_black(), output_file);
+        println!("{} {} {} {}", "Renaming".green().bold(), input_file, "-->".green().bold(), output_file);
     }
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
