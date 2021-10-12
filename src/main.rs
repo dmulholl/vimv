@@ -50,6 +50,7 @@ Flags:
   -g, --git                 Use git for git-tracked files.
   -h, --help                Print this help text and exit.
   -q, --quiet               Only report errors.
+  -s, --stdin               Read the list of input files from standard input.
   -v, --version             Print the version number and exit.
 ";
 
@@ -62,6 +63,7 @@ fn main() {
         .flag("delete d")
         .flag("git g")
         .flag("quiet q")
+        .flag("stdin s")
         .option("editor e", "");
 
     // Parse the command line arguments.
@@ -75,18 +77,24 @@ fn main() {
     }
 
     // Assemble the list of input filenames.
-    let input_files: Vec<String> = if parser.args.len() > 0 {
-        parser.args.iter().map(|s| s.trim().to_string()).collect()
-    } else {
+    let input_files: Vec<String>;
+
+    if parser.found("stdin") {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
-            eprintln!("Error: cannot read filenames from standard input.");
+            eprintln!("Error: failed to read from standard input.");
             eprintln!("The OS reports: {}", err);
             exit(1);
         } else {
-            buffer.lines().map(|s| s.trim().to_string()).collect()
+            input_files = buffer.lines().map(|s| s.trim().to_string()).collect();
         }
-    };
+    } else {
+        input_files = parser.args.iter().map(|s| s.trim().to_string()).collect();
+    }
+
+    if input_files.len() == 0 {
+        exit(0);
+    }
 
     // Sanity check - verify that all the input files exist.
     for input_file in &input_files {
