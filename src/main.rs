@@ -77,21 +77,22 @@ fn main() {
     }
 
     // Assemble the list of input filenames.
-    let input_files: Vec<String>;
+    let mut input_files: Vec<String> = parser.args.iter().map(|s| s.trim().to_string()).collect();
 
-    if parser.found("stdin") {
+    // If the --stdin flag has been set and no filenames have been specified on the command line,
+    // try reading the input filenames from standard input.
+    if input_files.len() == 0 && parser.found("stdin") {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
             eprintln!("Error: failed to read from standard input.");
             eprintln!("The OS reports: {}", err);
             exit(1);
-        } else {
-            input_files = buffer.lines().map(|s| s.trim().to_string()).collect();
+        } else if !buffer.trim().is_empty() {
+            input_files.extend(buffer.lines().map(|s| s.trim().to_string()));
         }
-    } else {
-        input_files = parser.args.iter().map(|s| s.trim().to_string()).collect();
     }
 
+    // Bail if we have no input filenames to process.
     if input_files.len() == 0 {
         exit(0);
     }
