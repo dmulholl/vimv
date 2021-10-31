@@ -1,6 +1,6 @@
 # Vimv
 
-This command line utility lets you batch-rename files from the comfort of your favourite text editor. You specify the files to be renamed as arguments, e.g.
+This simple command line utility lets you batch-rename files from the comfort of your favourite text editor. You specify the files to be renamed as arguments, e.g.
 
     $ vimv *.mp3
 
