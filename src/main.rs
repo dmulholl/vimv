@@ -30,9 +30,9 @@ Usage: vimv [files]
   to overwrite a directory the program will exit with an error message and a
   non-zero status code.)
 
-  You can delete a file by 'renaming' it to a blank line, but only if the
-  --delete flag has been specified. Deleted files are moved to the system's
-  trash/recycle bin.
+  You can delete a file or directory by 'renaming' it to a blank line, but only
+  if the --delete flag has been specified. Deleted files are moved to the
+  system's trash/recycle bin.
 
   If the --git flag is specified then git will be used to rename or delete
   any files which are being tracked by git. (Note that this bypasses the
