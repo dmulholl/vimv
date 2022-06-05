@@ -176,8 +176,13 @@ fn main() {
         if input_file == output_file {
             continue;
         } else if Path::new(output_file).is_dir() {
-            eprintln!("Error: cannot overwrite the existing directory '{}'.", output_file);
-            exit(1);
+            if input_files.contains(output_file) {
+                rename_list.push((input_file.to_string(), output_file.to_string()));
+                rename_set.insert(input_file.to_string());
+            } else {
+                eprintln!("Error: cannot overwrite the existing directory '{}'.", output_file);
+                exit(1);
+            }
         } else if output_file.is_empty() {
             if parser.found("delete") {
                 delete_list.push(input_file);
