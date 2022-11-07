@@ -116,7 +116,8 @@ fn main() {
     }
 
     // Fetch the string of output filenames from the editor.
-    let editor_input = input_files.join("\n");
+    // Make sure not to forget the ending newline.
+    let editor_input = input_files.join("\n") + "\n";
     let editor_output = match edit::edit(editor_input) {
         Ok(edited) => edited,
         Err(err) => {
