@@ -36,6 +36,7 @@ jobs:
           - os: ubuntu-18.04
             artifact-name: vimv-linux-aarch64
             cargo-target: aarch64-unknown-linux-gnu
+            linker: gcc-aarch64-linux-gnu
           - os: macos-latest
             artifact-name: vimv-macos-x86_64
             cargo-target: x86_64-apple-darwin
@@ -56,7 +57,13 @@ jobs:
           override: true
           profile: minimal
 
-      - name: Build Binary (All features)
+      - name: Install Linker packages
+        if: ${{ matrix.linker != '' }}
+        run: |
+          sudo apt update
+          sudo apt install ${{ matrix.linker }}
+
+      - name: Build Binary
         run: cargo build --verbose --locked --release --target ${{ matrix.cargo-target }}
         env:
           CARGO_TARGET_DIR: output
