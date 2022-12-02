@@ -77,7 +77,7 @@ fn main() {
     }
 
     // Assemble the list of input filenames.
-    let mut input_files: Vec<String> = parser.args.iter().map(|s| s.trim().to_string()).collect();
+    let mut input_files: Vec<String> = parser.args.iter().map(|s| s.to_string()).collect();
 
     // If the --stdin flag has been set and no filenames have been specified on the command line,
     // try reading the input filenames from standard input.
@@ -88,7 +88,7 @@ fn main() {
             eprintln!("The OS reports: {}", err);
             exit(1);
         } else if !buffer.trim().is_empty() {
-            input_files.extend(buffer.lines().map(|s| s.trim().to_string()));
+            input_files.extend(buffer.lines().map(|s| s.to_string()));
         }
     }
 
@@ -126,7 +126,7 @@ fn main() {
     };
 
     // Sanity check - verify that we have equal numbers of input and output filenames.
-    let output_files: Vec<String> = editor_output.lines().map(|s| s.trim().to_string()).collect();
+    let output_files: Vec<String> = editor_output.lines().map(|s| s.to_string()).collect();
     if output_files.len() != input_files.len() {
         eprintln!(
             "Error: the number of input filenames ({}) does not match the number of output filenames ({}).",
