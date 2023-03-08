@@ -1,13 +1,12 @@
 use arguably::ArgParser;
+use colored::*;
+use rand::Rng;
+use std::collections::HashSet;
+use std::env;
+use std::io::Read;
 use std::path::Path;
 use std::process::exit;
-use std::env;
-use std::collections::HashSet;
-use rand::Rng;
 use std::process::Command;
-use std::io::Read;
-use colored::*;
-
 
 const HELP: &str = "
 Usage: vimv [files]
@@ -54,7 +53,6 @@ Flags:
   -v, --version             Print the version number and exit.
 ";
 
-
 fn main() {
     let mut parser = ArgParser::new()
         .helptext(HELP)
@@ -81,7 +79,7 @@ fn main() {
 
     // If the --stdin flag has been set and no filenames have been specified on the command line,
     // try reading the input filenames from standard input.
-    if input_files.len() == 0 && parser.found("stdin") {
+    if input_files.is_empty() && parser.found("stdin") {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
             eprintln!("Error: failed to read from standard input.");
@@ -93,7 +91,7 @@ fn main() {
     }
 
     // Bail if we have no input filenames to process.
-    if input_files.len() == 0 {
+    if input_files.is_empty() {
         exit(0);
     }
 
@@ -109,7 +107,10 @@ fn main() {
     let mut input_set = HashSet::new();
     for input_file in &input_files {
         if input_set.contains(input_file) {
-            eprintln!("Error: the filename '{}' appears in the input list multiple times.", input_file);
+            eprintln!(
+                "Error: the filename '{}' appears in the input list multiple times.",
+                input_file
+            );
             exit(1);
         }
         input_set.insert(input_file);
@@ -126,7 +127,10 @@ fn main() {
     };
 
     // Sanity check - verify that we have equal numbers of input and output filenames.
-    let output_files: Vec<String> = editor_output.lines().map(|s| s.trim().to_string()).collect();
+    let output_files: Vec<String> = editor_output
+        .lines()
+        .map(|s| s.trim().to_string())
+        .collect();
     if output_files.len() != input_files.len() {
         eprintln!(
             "Error: the number of input filenames ({}) does not match the number of output filenames ({}).",
@@ -140,7 +144,10 @@ fn main() {
     let mut case_sensitive_output_set = HashSet::new();
     for output_file in output_files.iter().filter(|s| !s.is_empty()) {
         if case_sensitive_output_set.contains(output_file) {
-            eprintln!("Error: the filename '{}' appears in the output list multiple times.", output_file);
+            eprintln!(
+                "Error: the filename '{}' appears in the output list multiple times.",
+                output_file
+            );
             exit(1);
         }
         case_sensitive_output_set.insert(output_file);
@@ -148,7 +155,11 @@ fn main() {
 
     // Sanity check - verify that the (non-empty) output filenames are case-insensitively unique.
     let mut case_insensitive_output_set = HashSet::new();
-    for output_file in output_files.iter().filter(|s| !s.is_empty()).map(|s| s.to_lowercase()) {
+    for output_file in output_files
+        .iter()
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_lowercase())
+    {
         if case_insensitive_output_set.contains(&output_file) {
             eprintln!(
                 "Error: the filename '{}' appears multiple times in the output list (case \
@@ -180,7 +191,10 @@ fn main() {
                 rename_list.push((input_file.to_string(), output_file.to_string()));
                 rename_set.insert(input_file.to_string());
             } else {
-                eprintln!("Error: cannot overwrite the existing directory '{}'.", output_file);
+                eprintln!(
+                    "Error: cannot overwrite the existing directory '{}'.",
+                    output_file
+                );
                 exit(1);
             }
         } else if output_file.is_empty() {
@@ -191,10 +205,7 @@ fn main() {
                 exit(1);
             }
         } else if Path::new(output_file).is_file() {
-            if input_files.contains(output_file) {
-                rename_list.push((input_file.to_string(), output_file.to_string()));
-                rename_set.insert(input_file.to_string());
-            } else if parser.found("force") {
+            if input_files.contains(output_file) || parser.found("force") {
                 rename_list.push((input_file.to_string(), output_file.to_string()));
                 rename_set.insert(input_file.to_string());
             } else {
@@ -228,10 +239,14 @@ fn main() {
 
     // Rename loop.
     for (input_file, output_file) in rename_list {
-        move_file(&input_file, &output_file, parser.found("git"), parser.found("quiet"));
+        move_file(
+            &input_file,
+            &output_file,
+            parser.found("git"),
+            parser.found("quiet"),
+        );
     }
 }
-
 
 // Generate a unique temporary filename.
 fn get_temp_filename(base: &str) -> String {
@@ -242,10 +257,12 @@ fn get_temp_filename(base: &str) -> String {
             return candidate;
         }
     }
-    eprintln!("Error: cannot generate a temporary filename of the form '{}.vimv_temp_XXXX'.", base);
+    eprintln!(
+        "Error: cannot generate a temporary filename of the form '{}.vimv_temp_XXXX'.",
+        base
+    );
     exit(1);
 }
-
 
 // Delete the specified file using 'git rm' or move it to the system's trash/recycle bin.
 fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
@@ -253,16 +270,24 @@ fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
         println!("{} {}", "Deleting".green().bold(), input_file);
     }
     if use_git && is_git_tracked(input_file) {
-        match Command::new("git").arg("rm").arg("-r").arg(input_file).output() {
+        match Command::new("git")
+            .arg("rm")
+            .arg("-r")
+            .arg(input_file)
+            .output()
+        {
             Err(err) => {
                 eprintln!("Error: cannot 'git rm' the file '{}'.", input_file);
                 eprintln!("The OS reports: {}", err);
                 exit(1);
-            },
+            }
             Ok(output) => {
                 if !output.status.success() {
                     eprintln!("Error: cannot 'git rm' the file '{}'.", input_file);
-                    eprintln!("Git reports: {}", String::from_utf8_lossy(&output.stderr).trim());
+                    eprintln!(
+                        "Git reports: {}",
+                        String::from_utf8_lossy(&output.stderr).trim()
+                    );
                     exit(1);
                 }
             }
@@ -274,7 +299,6 @@ fn delete_file(input_file: &str, use_git: bool, quiet: bool) {
     }
 }
 
-
 // Rename `input_file` to `output_file`.
 fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
     if !quiet {
@@ -284,45 +308,71 @@ fn move_file(input_file: &str, output_file: &str, use_git: bool, quiet: bool) {
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
-                eprintln!("Error: cannot create the required directory '{}'.", parent_path.display());
+                eprintln!(
+                    "Error: cannot create the required directory '{}'.",
+                    parent_path.display()
+                );
                 eprintln!("The OS reports: {}", err);
                 exit(1);
             }
         }
     }
     if use_git && is_git_tracked(input_file) {
-        match Command::new("git").arg("mv").arg("-f").arg(input_file).arg(output_file).output() {
+        match Command::new("git")
+            .arg("mv")
+            .arg("-f")
+            .arg(input_file)
+            .arg(output_file)
+            .output()
+        {
             Err(err) => {
-                eprintln!("Error: cannot 'git mv' the file '{}' to '{}'.", input_file, output_file);
+                eprintln!(
+                    "Error: cannot 'git mv' the file '{}' to '{}'.",
+                    input_file, output_file
+                );
                 eprintln!("The OS reports: {}", err);
                 exit(1);
-            },
+            }
             Ok(output) => {
                 if !output.status.success() {
-                    eprintln!("Error: cannot 'git mv' the file '{}' to '{}'.", input_file, output_file);
-                    eprintln!("Git reports: {}", String::from_utf8_lossy(&output.stderr).trim());
+                    eprintln!(
+                        "Error: cannot 'git mv' the file '{}' to '{}'.",
+                        input_file, output_file
+                    );
+                    eprintln!(
+                        "Git reports: {}",
+                        String::from_utf8_lossy(&output.stderr).trim()
+                    );
                     exit(1);
                 }
             }
         };
     } else if let Err(err) = std::fs::rename(input_file, output_file) {
-        eprintln!("Error: cannot rename the file '{}' to '{}'.", input_file, output_file);
+        eprintln!(
+            "Error: cannot rename the file '{}' to '{}'.",
+            input_file, output_file
+        );
         eprintln!("The OS reports: {}", err);
         exit(1);
     }
 }
 
-
 // Returns true if the file is being tracked by git.
 fn is_git_tracked(file: &str) -> bool {
-    match Command::new("git").arg("ls-files").arg("--error-unmatch").arg(file).output() {
+    match Command::new("git")
+        .arg("ls-files")
+        .arg("--error-unmatch")
+        .arg(file)
+        .output()
+    {
         Err(err) => {
-            eprintln!("Error: cannot check if the file '{}' is being tracked by git.", file);
+            eprintln!(
+                "Error: cannot check if the file '{}' is being tracked by git.",
+                file
+            );
             eprintln!("The OS reports: {}", err);
             exit(1);
-        },
-        Ok(output) => {
-            output.status.success()
         }
+        Ok(output) => output.status.success(),
     }
 }
