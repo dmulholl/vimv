@@ -1,6 +1,6 @@
 [package]
 name = "vimv"
-version = "1.8.0"
+version = "2.0.0-alpha1"
 authors = ["Darren Mulholland <dmulholl@tcd.ie>"]
 edition = "2018"
 description = "A command line utility for batch-renaming files using a text editor."
