@@ -11,7 +11,7 @@ use colored::*;
 const HELPTEXT: &str = "
 Usage: vimv [files]
 
-  This utility lets you batch rename files using a text editor. Files to be
+  This utility lets you batch-rename files using a text editor. Files to be
   renamed should be supplied as a list of command-line arguments, e.g.
 
     $ vimv *.mp3
