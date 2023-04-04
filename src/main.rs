@@ -30,7 +30,7 @@ Usage: vimv [files]
   non-zero status code.)
 
   You can delete a file or directory by prefixing its name with a `#` symbol.
-  Deleted files are moved to the system's trash/recycle bin.
+  Deleted files and directories are moved to the system's trash/recycle bin.
 
 Arguments:
   [files]                   List of files to rename.
@@ -39,9 +39,9 @@ Options:
   -e, --editor <name>       Specify the editor to use. Overrides $EDITOR.
 
 Flags:
-  -f, --force               Overwrite existing files.
+  -f, --force               Allow overwriting existing files.
   -h, --help                Print this help text and exit.
-  -q, --quiet               Only report errors.
+  -q, --quiet               Quiet mode -- only report errors.
   -s, --stdin               Read the list of input files from standard input.
   -v, --version             Print the version number and exit.
 ";
