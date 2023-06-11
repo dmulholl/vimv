@@ -2,6 +2,7 @@ use arguably::ArgParser;
 use std::path::Path;
 use std::process::exit;
 use std::env;
+use std::fs;
 use std::collections::HashSet;
 use rand::Rng;
 use std::io::Read;
@@ -19,7 +20,10 @@ Usage: vimv [files]
   The list of files will be opened in the editor specified by the $EDITOR
   environment variable, one filename per line. Edit the list, save, and exit.
   The files will be renamed to the edited filenames. Directories along the
-  new paths will be created as required.
+  renamed paths will be created as required.
+
+  If the input file list is empty, Vimv defaults to listing the contents of
+  the current working directory.
 
   Vimv supports cycle-renaming. You can safely rename A to B, B to C, and C
   to A in a single operation.
@@ -69,11 +73,35 @@ fn main() {
     // Assemble the list of input filenames.
     let mut input_files: Vec<String> = parser.args.clone();
 
+    // If no input files have been specified, use the content of the current directory.
+    if input_files.is_empty() && !parser.found("stdin") {
+        let current_dir = env::current_dir().unwrap_or_else(|err| {
+            eprintln!("error: failed to locate current directory: {}", err);
+            exit(1);
+        });
+        let current_dir_iterator = fs::read_dir(current_dir).unwrap_or_else(|err| {
+            eprintln!("error: failed to read current directory: {}", err);
+            exit(1);
+        });
+        for entry in current_dir_iterator {
+            let entry = entry.unwrap_or_else(|err| {
+                eprintln!("error: failed to read current directory entry: {}", err);
+                exit(1);
+            });
+            let entry_as_string = entry.path().into_os_string().into_string().unwrap_or_else(|err| {
+                eprintln!("error: failed to decode current directory entry name: {:?}", err);
+                exit(1);
+            });
+            input_files.push(entry_as_string);
+        }
+        input_files.sort();
+    }
+
     // If the --stdin flag has been set, try reading from standard input.
     if parser.found("stdin") {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
-            eprintln!("Error: failed to read filenames from standard input: {}", err);
+            eprintln!("error: failed to read filenames from standard input: {}", err);
             exit(1);
         }
         if !buffer.trim().is_empty() {
@@ -89,7 +117,7 @@ fn main() {
     // Sanity check - verify that no input filename begins with '#'.
     for input_file in &input_files {
         if input_file.starts_with("#") {
-            eprintln!("Error: input filenames cannot begin with '#'.");
+            eprintln!("error: input filenames cannot begin with '#'");
             exit(1);
         }
     }
@@ -97,7 +125,7 @@ fn main() {
     // Sanity check - verify that all the input files exist.
     for input_file in &input_files {
         if !Path::new(input_file).exists() {
-            eprintln!("Error: the input file '{}' does not exist.", input_file);
+            eprintln!("error: the input file '{}' does not exist", input_file);
             exit(1);
         }
     }
@@ -106,7 +134,7 @@ fn main() {
     let mut input_set = HashSet::new();
     for input_file in &input_files {
         if input_set.contains(input_file) {
-            eprintln!("Error: the filename '{}' appears in the input list multiple times.", input_file);
+            eprintln!("error: the filename '{}' appears in the input list multiple times", input_file);
             exit(1);
         }
         input_set.insert(input_file);
@@ -117,7 +145,7 @@ fn main() {
     let editor_output = match edit::edit(editor_input) {
         Ok(edited) => edited.trim().to_string(),
         Err(err) => {
-            eprintln!("Error: {}", err);
+            eprintln!("error: {}", err);
             exit(1);
         }
     };
@@ -126,7 +154,7 @@ fn main() {
     // Sanity check - verify that we have equal numbers of input and output filenames.
     if output_files.len() != input_files.len() {
         eprintln!(
-            "Error: the number of input filenames ({}) does not match the number of output filenames ({}).",
+            "error: the number of input filenames ({}) does not match the number of output filenames ({})",
             input_files.len(),
             output_files.len()
         );
@@ -137,7 +165,7 @@ fn main() {
     let mut case_sensitive_output_set = HashSet::new();
     for output_file in output_files.iter().filter(|s| !s.starts_with("#")) {
         if case_sensitive_output_set.contains(output_file) {
-            eprintln!("Error: the filename '{}' appears in the output list multiple times.", output_file);
+            eprintln!("error: the filename '{}' appears in the output list multiple times", output_file);
             exit(1);
         }
         case_sensitive_output_set.insert(output_file);
@@ -148,10 +176,10 @@ fn main() {
     for output_file in output_files.iter().filter(|s| !s.starts_with("#")).map(|s| s.to_lowercase()) {
         if case_insensitive_output_set.contains(&output_file) {
             eprintln!(
-                "Error: the filename '{}' appears multiple times in the output list (case \
-                insensitively). This may be intentional but Vimv always treats this situation \
+                "error: the filename '{}' appears multiple times in the output list (case \
+                insensitively); this may be intentional but Vimv always treats this situation \
                 as an error to avoid accidentally overwriting files on case-insensitive \
-                file systems.",
+                file systems",
                 output_file
             );
             exit(1);
@@ -180,7 +208,7 @@ fn main() {
                 rename_set.insert(input_file.to_string());
                 continue;
             }
-            eprintln!("Error: cannot overwrite the existing directory '{}'.", output_file);
+            eprintln!("error: cannot overwrite the existing directory '{}'", output_file);
             exit(1);
         }
 
@@ -203,7 +231,7 @@ fn main() {
             }
 
             eprintln!(
-                "Error: the output file '{}' already exists, use --force to overwrite it.",
+                "error: the output file '{}' already exists, use --force to overwrite it",
                 output_file
             );
             exit(1);
@@ -247,7 +275,7 @@ fn get_temp_filename(base: &str) -> String {
         }
     }
     eprintln!(
-        "Error: failed to generate a unique temporary filename of the form '{}.vimv_temp_XXXX'.",
+        "error: failed to generate a unique temporary filename of the form '{}.vimv_temp_XXXX'",
         base
     );
     exit(1);
@@ -260,7 +288,7 @@ fn delete_file(input_file: &str, quiet: bool) {
         println!("{} {}", "Deleting".green().bold(), input_file);
     }
     if let Err(err) = trash::delete(input_file) {
-        eprintln!("Error: cannot delete the file '{}': {}", input_file, err);
+        eprintln!("error: cannot delete the file '{}': {}", input_file, err);
         exit(1);
     }
 }
@@ -275,13 +303,13 @@ fn move_file(input_file: &str, output_file: &str, quiet: bool) {
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
-                eprintln!("Error: cannot create the required directory '{}': {}", parent_path.display(), err);
+                eprintln!("error: cannot create the required directory '{}': {}", parent_path.display(), err);
                 exit(1);
             }
         }
     }
     if let Err(err) = std::fs::rename(input_file, output_file) {
-        eprintln!("Error: cannot rename the file '{}' to '{}': {}", input_file, output_file, err);
+        eprintln!("error: cannot rename the file '{}' to '{}': {}", input_file, output_file, err);
         exit(1);
     }
 }
