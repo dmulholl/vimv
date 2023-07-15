@@ -1,0 +1,142 @@
+name: ⚙️🚀
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    tags: ["*"]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: 🦀 Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v3
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: ♻️ Manage Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/
+            target/
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-${{ runner.os }}-
+
+      - name: 🎨 Check Formatting
+        run: cargo fmt --check --all
+
+      - name: 📎 Check Linting
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+      - name: 🧪 Run Tests
+        run: cargo test --locked --all-targets --all-features
+
+  build-artifacts:
+    name: ⚙️ Build (${{ matrix.artifact-name }})
+    needs: [code-quality]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact-name: vimv-x86_64-unknown-linux-gnu
+            cargo-target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            artifact-name: vimv-aarch64-unknown-linux-gnu
+            cargo-target: aarch64-unknown-linux-gnu
+            linker: gcc-aarch64-linux-gnu
+          - os: ubuntu-latest
+            artifact-name: vimv-aarch64-linux-android
+            cargo-target: aarch64-linux-android
+          - os: macos-latest
+            artifact-name: vimv-aarch64-apple-darwin
+            cargo-target: aarch64-apple-darwin
+          - os: windows-latest
+            artifact-name: vimv-x86_64-pc-windows-gnu
+            cargo-target: x86_64-pc-windows-gnu
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v3
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.cargo-target }}
+
+      - name: 🔗 Install Linker packages
+        if: matrix.linker != ''
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install ${{ matrix.linker }}
+
+      - name: 🛣️ Set Linker Path
+        if: matrix.cargo-target == 'aarch64-linux-android'
+        run: echo "$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+
+      - name: ♻️ Manage Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/
+            target/
+          key: cargo-${{ matrix.artifact-name }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ matrix.artifact-name }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-${{ matrix.artifact-name }}-
+
+      - name: 🛠️ Build Binary
+        run: cargo build --locked --release --target ${{ matrix.cargo-target }}
+
+      - name: 📁 Setup Archive + Extension
+        shell: bash
+        run: |
+          mkdir -p staging
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "target/${{ matrix.cargo-target }}/release/vimv.exe" staging/
+            cd staging
+            7z a ../${{ matrix.artifact-name }}.zip *
+          else
+            cp "target/${{ matrix.cargo-target }}/release/vimv" staging/
+            cd staging
+            zip ../${{ matrix.artifact-name }}.zip *
+          fi
+
+      - name: ⬆️ Upload Binary Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.zip
+          retention-days: 5
+
+  release:
+    name: 🚀 Create Release
+    if: github.ref_type	== 'tag'
+    needs: [build-artifacts]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Download All Binary Artifacts
+        uses: actions/download-artifact@v3
+
+      - name: 🗃️ Create Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          generate_release_notes: true
+          files: vimv-*/*.zip

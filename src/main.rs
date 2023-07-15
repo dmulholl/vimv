@@ -1,13 +1,12 @@
 use arguably::ArgParser;
-use std::path::Path;
-use std::process::exit;
+use colored::*;
+use rand::Rng;
+use std::collections::HashSet;
 use std::env;
 use std::fs;
-use std::collections::HashSet;
-use rand::Rng;
 use std::io::Read;
-use colored::*;
-
+use std::path::Path;
+use std::process::exit;
 
 const HELPTEXT: &str = "
 Usage: vimv [files]
@@ -50,7 +49,6 @@ Flags:
   -v, --version             Print the version number and exit.
 ";
 
-
 fn main() {
     let mut parser = ArgParser::new()
         .helptext(HELPTEXT)
@@ -88,10 +86,18 @@ fn main() {
                 eprintln!("error: failed to read current directory entry: {}", err);
                 exit(1);
             });
-            let entry_as_string = entry.path().into_os_string().into_string().unwrap_or_else(|err| {
-                eprintln!("error: failed to decode current directory entry name: {:?}", err);
-                exit(1);
-            });
+            let entry_as_string =
+                entry
+                    .path()
+                    .into_os_string()
+                    .into_string()
+                    .unwrap_or_else(|err| {
+                        eprintln!(
+                            "error: failed to decode current directory entry name: {:?}",
+                            err
+                        );
+                        exit(1);
+                    });
             input_files.push(entry_as_string);
         }
         input_files.sort();
@@ -101,7 +107,10 @@ fn main() {
     if parser.found("stdin") {
         let mut buffer = String::new();
         if let Err(err) = std::io::stdin().read_to_string(&mut buffer) {
-            eprintln!("error: failed to read filenames from standard input: {}", err);
+            eprintln!(
+                "error: failed to read filenames from standard input: {}",
+                err
+            );
             exit(1);
         }
         if !buffer.trim().is_empty() {
@@ -116,7 +125,7 @@ fn main() {
 
     // Sanity check - verify that no input filename begins with '#'.
     for input_file in &input_files {
-        if input_file.starts_with("#") {
+        if input_file.starts_with('#') {
             eprintln!("error: input filenames cannot begin with '#'");
             exit(1);
         }
@@ -134,7 +143,10 @@ fn main() {
     let mut input_set = HashSet::new();
     for input_file in &input_files {
         if input_set.contains(input_file) {
-            eprintln!("error: the filename '{}' appears in the input list multiple times", input_file);
+            eprintln!(
+                "error: the filename '{}' appears in the input list multiple times",
+                input_file
+            );
             exit(1);
         }
         input_set.insert(input_file);
@@ -163,9 +175,12 @@ fn main() {
 
     // Sanity check - verify that the output filenames are unique.
     let mut case_sensitive_output_set = HashSet::new();
-    for output_file in output_files.iter().filter(|s| !s.starts_with("#")) {
+    for output_file in output_files.iter().filter(|s| !s.starts_with('#')) {
         if case_sensitive_output_set.contains(output_file) {
-            eprintln!("error: the filename '{}' appears in the output list multiple times", output_file);
+            eprintln!(
+                "error: the filename '{}' appears in the output list multiple times",
+                output_file
+            );
             exit(1);
         }
         case_sensitive_output_set.insert(output_file);
@@ -173,7 +188,11 @@ fn main() {
 
     // Sanity check - verify that the output filenames are case-insensitively unique.
     let mut case_insensitive_output_set = HashSet::new();
-    for output_file in output_files.iter().filter(|s| !s.starts_with("#")).map(|s| s.to_lowercase()) {
+    for output_file in output_files
+        .iter()
+        .filter(|s| !s.starts_with('#'))
+        .map(|s| s.to_lowercase())
+    {
         if case_insensitive_output_set.contains(&output_file) {
             eprintln!(
                 "error: the filename '{}' appears multiple times in the output list (case \
@@ -208,11 +227,14 @@ fn main() {
                 rename_set.insert(input_file.to_string());
                 continue;
             }
-            eprintln!("error: cannot overwrite the existing directory '{}'", output_file);
+            eprintln!(
+                "error: cannot overwrite the existing directory '{}'",
+                output_file
+            );
             exit(1);
         }
 
-        if output_file.starts_with("#") {
+        if output_file.starts_with('#') {
             delete_list.push(input_file);
             continue;
         }
@@ -224,7 +246,7 @@ fn main() {
                 continue;
             }
 
-           if parser.found("force") {
+            if parser.found("force") {
                 rename_list.push((input_file.to_string(), output_file.to_string()));
                 rename_set.insert(input_file.to_string());
                 continue;
@@ -264,7 +286,6 @@ fn main() {
     }
 }
 
-
 // Generate a unique temporary filename.
 fn get_temp_filename(base: &str) -> String {
     let mut rng = rand::thread_rng();
@@ -281,7 +302,6 @@ fn get_temp_filename(base: &str) -> String {
     exit(1);
 }
 
-
 // Move the specified file to the system's trash/recycle bin.
 fn delete_file(input_file: &str, quiet: bool) {
     if !quiet {
@@ -293,7 +313,6 @@ fn delete_file(input_file: &str, quiet: bool) {
     }
 }
 
-
 // Rename `input_file` to `output_file`.
 fn move_file(input_file: &str, output_file: &str, quiet: bool) {
     if !quiet {
@@ -303,13 +322,20 @@ fn move_file(input_file: &str, output_file: &str, quiet: bool) {
     if let Some(parent_path) = Path::new(output_file).parent() {
         if !parent_path.is_dir() {
             if let Err(err) = std::fs::create_dir_all(parent_path) {
-                eprintln!("error: cannot create the required directory '{}': {}", parent_path.display(), err);
+                eprintln!(
+                    "error: cannot create the required directory '{}': {}",
+                    parent_path.display(),
+                    err
+                );
                 exit(1);
             }
         }
     }
     if let Err(err) = std::fs::rename(input_file, output_file) {
-        eprintln!("error: cannot rename the file '{}' to '{}': {}", input_file, output_file, err);
+        eprintln!(
+            "error: cannot rename the file '{}' to '{}': {}",
+            input_file, output_file, err
+        );
         exit(1);
     }
 }
