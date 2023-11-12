@@ -13,7 +13,7 @@ The list of files will be opened in the editor specified by the `$EDITOR` enviro
 
 
 
-### Installation
+## Installation
 
 Vimv is written in Rust &mdash; if you have a Rust compiler available, you can install it directly from the package index using `cargo`:
 
@@ -24,7 +24,7 @@ Vimv is written in Rust &mdash; if you have a Rust compiler available, you can i
 
 
 
-### Interface
+## Interface
 
 Run `vimv --help` to view the command line help:
 
@@ -80,20 +80,20 @@ ignore the rest.
 
 
 
-### Cycle Renaming
+## Cycle Renaming
 
 Vimv supports cycle-renaming. You can safely rename A to B, B to C, and C to A in a single operation.
 
 
 
-### Deleting Files
+## Deleting Files
 
 You can delete a file or directory by prefixing its name with a `#` symbol.
 Deleted files and directories are moved to the system's trash/recycle bin.
 
 
 
-### Graphical Editors
+## Graphical Editors
 
 If you want to use a graphical editor like VS Code or Sublime Text instead of a terminal editor like Vim then (depending on your operating system) you may need to add a 'wait' flag to the `$EDITOR` variable to force the editor to block, e.g.
 
@@ -107,7 +107,7 @@ The same flag can be used with the `--editor` option, e.g.
 
 
 
-### Piped Input
+## Piped Input
 
 You can pipe a list of filenames into Vimv from a tool like `ls` or `fd`, e.g.
 
@@ -121,6 +121,6 @@ Vim prints a warning, then works, then borks your terminal session until you run
 
 
 
-### License
+## License
 
 Zero-Clause BSD (0BSD).
