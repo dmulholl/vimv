@@ -30,7 +30,7 @@ Usage: vimv [files]
 
   Use the --force flag to overwrite existing files that aren't part of a
   renaming cycle. (Existing directories are never overwritten. If you attempt
-  to overwrite a directory the program will exit with an error message and a
+  to overwrite a directory, the program will exit with an error message and a
   non-zero status code.)
 
   You can delete a file or directory by prefixing its name with a `#` symbol.
@@ -88,7 +88,7 @@ fn main() {
                 eprintln!("error: failed to read current directory entry: {}", err);
                 exit(1);
             });
-            let entry_as_string = entry.path().into_os_string().into_string().unwrap_or_else(|err| {
+            let entry_as_string = entry.file_name().into_string().unwrap_or_else(|err| {
                 eprintln!("error: failed to decode current directory entry name: {:?}", err);
                 exit(1);
             });
