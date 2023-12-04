@@ -22,6 +22,16 @@ Vimv is written in Rust &mdash; if you have a Rust compiler available, you can i
 * [Documentation][1]
 * [Package][2]
 
+### AUR
+
+If you are using Arch Linux, you can get `vimv` from the AUR:
+
+    $ yay -S vimv
+
+Or
+
+    $ paru -S vimv
+
 
 
 ## Interface
