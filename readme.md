@@ -8,7 +8,7 @@
 
 This simple command line utility lets you batch-rename files from the comfort of your favourite text editor. You specify the files to be renamed as arguments, e.g.
 
-    $ vimv *.mp3
+    vimv *.mp3
 
 The list of files will be opened in the editor specified by the `$EDITOR` environment variable, one filename per line. Edit the list, save, and exit. The files will be renamed to the edited filenames.
 
@@ -85,7 +85,7 @@ Run `vimv --help` to view the command line help:
 Vimv simply ignores any filenames that haven't been changed so you don't have to be overly fussy
 about specifying its input. You can run:
 
-    $ vimv *
+    vimv *
 
 to get a full listing of a directory's contents, change just the items you want, and Vimv will
 ignore the rest.
@@ -115,7 +115,7 @@ If you want to use a graphical editor like VS Code or Sublime Text instead of a 
 
 The same flag can be used with the `--editor` option, e.g.
 
-    $ vimv *.mp3 --editor "code -w"
+    vimv *.mp3 --editor "code -w"
 
 
 
@@ -123,7 +123,7 @@ The same flag can be used with the `--editor` option, e.g.
 
 You can pipe a list of filenames into Vimv from a tool like `ls` or `fd`, e.g.
 
-    $ fd .txt | vimv --stdin
+    fd .txt | vimv --stdin
 
 Note that your editor may not appreciate inheriting a standard input stream that's connected to a pipe rather than a terminal.
 Graphical editors tend to handle this situation without complaint, as does Neovim in the terminal.
