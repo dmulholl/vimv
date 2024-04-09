@@ -2,6 +2,7 @@
 
 [1]: https://www.dmulholl.com/dev/vimv.html
 [2]: https://crates.io/crates/vimv
+[3]: https://www.rust-lang.org/tools/install
 
 
 
@@ -17,20 +18,21 @@ The list of files will be opened in the editor specified by the `$EDITOR` enviro
 
 Vimv is written in Rust &mdash; if you have a Rust compiler available, you can install it directly from the package index using `cargo`:
 
-    $ cargo install vimv
+    cargo install vimv
 
-* [Documentation][1]
-* [Package][2]
+If you don't have a Rust compiler available, you can easily install one by following the instructions [here][3]. You don't need any knowledge of Rust to build, install, or use `vimv`.
+
+
 
 ### AUR
 
 If you are using Arch Linux, you can get `vimv` from the AUR:
 
-    $ yay -S vimv
+    yay -S vimv
 
 Or
 
-    $ paru -S vimv
+    paru -S vimv
 
 
 
